@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  # Java Spring Boot Backend with PDFBox
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: pdfbox-backend
+    environment:
+      - JAVA_OPTS=-Xmx512m
+      - APP_UPLOADS_DIR=/app/uploads
+    volumes:
+      - uploads_data:/app/uploads
+    networks:
+      - pdfbox-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/uploads"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # Nginx Frontend
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: pdfbox-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    networks:
+      - pdfbox-network
+    restart: unless-stopped
+
+networks:
+  pdfbox-network:
+    driver: bridge
+
+volumes:
+  uploads_data:
+    driver: local
